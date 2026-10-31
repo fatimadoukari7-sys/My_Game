@@ -16,7 +16,14 @@ def run_game():
 
     background = pygame.image.load('417403_980.jpg')
     background_size = background.get_size()
-    screen = pygame.display.set_mode(background_size)
+    # The game is drawn at a fixed logical size (the background size) and
+    # pygame scales it to the window. SCALED keeps the same proportions on
+    # every device; RESIZABLE lets the player enlarge the window.
+    try:
+        screen = pygame.display.set_mode(
+            background_size, pygame.SCALED | pygame.RESIZABLE)
+    except pygame.error:
+        screen = pygame.display.set_mode(background_size)
     settings.screen_width, settings.screen_height = background_size
     pygame.display.set_caption("Hero vs Monster")
 
