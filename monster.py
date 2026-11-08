@@ -37,6 +37,17 @@ class Monster(Sprite):
         self.dodge_until = 0
         self.decisions = {}   # bullet -> did we decide to dodge it?
 
+        self.max_health = self.settings.monster_health
+        self.health = self.max_health
+
+    def take_damage(self, amount=1):
+        """Lose health points (never below zero)."""
+        self.health = max(0, self.health - amount)
+
+    @property
+    def is_dead(self):
+        return self.health <= 0
+
     # ------------------------------------------------------------------
     def update(self, bullets, hero):
         now = pygame.time.get_ticks()
