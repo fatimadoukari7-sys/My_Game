@@ -37,7 +37,7 @@ def run_game():
     stats = GameStats(settings)
     hero = Hero(settings, screen)
     monster = Monster(settings, screen)
-    hud = HUD(settings, screen, stats, hero)
+    hud = HUD(settings, screen, stats, hero, monster)
     bullets = Group()
 
     clock = pygame.time.Clock()
