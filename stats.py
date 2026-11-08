@@ -7,7 +7,7 @@ class GameStats():
         self.last_reward = 0
         self.reset_stats()
 
-        # The high score is never reset during a session.
+        # The high score is never reset during a session.ه
         self.high_score = self._load_high_score()
 
     def reset_stats(self):
