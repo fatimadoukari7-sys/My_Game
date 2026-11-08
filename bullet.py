@@ -3,7 +3,7 @@ from pygame.sprite import Sprite
 
 
 class Bullet(Sprite):
-    """A bullet fired by the hero."""
+    """A bullet fired by the hero.="""
 
     def __init__(self, settings, screen, hero):
         super().__init__()
