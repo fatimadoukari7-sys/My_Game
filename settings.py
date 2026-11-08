@@ -10,7 +10,7 @@ class Settings():
         # Hero.
         self.hero_speed_factor = 4.3
         self.hero_health = 3
-        self.ammo_limit = 12          # total bullets the hero has
+        self.ammo_limit = 20         # total bullets the hero has
         self.hit_cooldown = 1000      # ms of protection after being hit
 
         # Bullet.
@@ -21,6 +21,7 @@ class Settings():
         self.bullets_allowed = 3      # max bullets on screen at once
 
         # Monster.
+        self.monster_health = 3           # bullets needed to defeat it
         self.monster_speed = 5            # faster than the hero
         self.monster_chase_speed = 6.5    # when the hero is out of ammo
         self.monster_dodge_range = 220    # distance at which it notices a bullet
