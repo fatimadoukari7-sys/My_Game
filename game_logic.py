@@ -75,6 +75,9 @@ def check_keydown_events(event, settings, screen, stats, hud, hero, monster,
         fire_bullet(settings, screen, stats, hero, bullets, shoot_sound)
     elif event.key == pygame.K_p and stats.state != "playing":
         start_game(settings, stats, hud, hero, monster, bullets)
+    elif event.key in (pygame.K_F11, pygame.K_f):
+        # Enlarge the game to full screen / go back to the window.
+        pygame.display.toggle_fullscreen()
     elif event.key == pygame.K_q:
         update_high_score(stats)
         sys.exit()
@@ -117,10 +120,13 @@ def update_bullets(settings, stats, hud, hero, monster, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
 
-    # A bullet hit the monster: the hero wins.
-    if pygame.sprite.spritecollideany(monster, bullets):
-        bullets.empty()
-        win_game(settings, stats, hud, hero)
+    # Bullets that hit the monster disappear and take away its health.
+    hits = pygame.sprite.spritecollide(monster, bullets, True)
+    if hits:
+        monster.take_damage(len(hits))
+        if monster.is_dead:          # no health left: the hero wins
+            bullets.empty()
+            win_game(settings, stats, hud, hero)
 
 
 def update_monster(settings, stats, hero, monster, bullets):
