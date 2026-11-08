@@ -1,23 +1,31 @@
 import pygame.font
 import pygame.transform
 
+from health_bar import HealthBar
+
 
 class HUD():
     """Draws score, health, ammo and status messages."""
 
-    def __init__(self, settings, screen, stats, hero):
+    def __init__(self, settings, screen, stats, hero, monster):
         self.screen = screen
         self.screen_rect = screen.get_rect()
         self.settings = settings
         self.stats = stats
         self.hero = hero
+        self.monster = monster
+        # Wide bar under the top row, left of the ammo text.
+        
+        self.monster_bar = HealthBar(screen, left=0, top=0, width=100)
 
         self.text_color = (30, 130, 230)
         self.font = pygame.font.SysFont(None, 40)
         self.big_font = pygame.font.SysFont(None, 80)
 
         # Small copy of the hero image used as a "heart".
-        self.heart = pygame.transform.scale(hero.image, (30, 30))
+        hw, hh = hero.image.get_size()
+        self.heart = pygame.transform.smoothscale(
+            hero.image, (max(1, int(hw * 30 / hh)), 30))
 
         self.prep_images()
 
@@ -38,6 +46,10 @@ class HUD():
         self.high_score_rect = self.high_score_image.get_rect()
         self.high_score_rect.centerx = self.screen_rect.centerx
         self.high_score_rect.top = 10
+        # The monster bar is as wide as the high score text, right below it.
+        self.monster_bar.rect.width = self.high_score_rect.width
+        self.monster_bar.rect.centerx = self.high_score_rect.centerx
+        self.monster_bar.rect.top = self.high_score_rect.bottom + 8
 
     def _center_text(self, text, color, y_offset):
         image = self.big_font.render(text, True, color)
@@ -63,6 +75,10 @@ class HUD():
         # Health.
         for i in range(max(self.hero.health, 0)):
             self.screen.blit(self.heart, (10 + i * 35, 10))
+
+        # Monster health bar (drawn by its own component, only while playing).
+        if self.stats.state == "playing":
+            self.monster_bar.draw(self.monster.health, self.monster.max_health)
 
         # Status messages.
         state = self.stats.state
