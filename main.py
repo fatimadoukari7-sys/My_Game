@@ -2,23 +2,22 @@ import pygame
 from pygame.sprite import Group
 
 from settings import Settings
+from high_score_storage import HighScoreStorage
+from stats import GameStats
+from hero_images import HeroImages
 from hero import Hero
 from monster import Monster
 from button import Button
-from stats import GameStats
 from hud import HUD
-import game_logic as gl
+from game_flow import GameFlow
+from shooter import Shooter
+from input_handler import InputHandler
+from combat import CombatSystem
+from renderer import Renderer, ScrollingBackground
 
 
-def run_game():
-    pygame.init()
-    settings = Settings()
-
-    background = pygame.image.load('417403_980.jpg')
-    background_size = background.get_size()
-    # The game is drawn at a fixed logical size (the background size) and
-    # pygame scales it to the window. SCALED keeps the same proportions on
-    # every device; RESIZABLE lets the player enlarge the window.
+def create_screen(settings, background_size):
+    """The game is drawn at the background size and pygame scales it."""
     try:
         screen = pygame.display.set_mode(
             background_size, pygame.SCALED | pygame.RESIZABLE)
@@ -26,43 +25,53 @@ def run_game():
         screen = pygame.display.set_mode(background_size)
     settings.screen_width, settings.screen_height = background_size
     pygame.display.set_caption("Hero vs Monster")
+    return screen
 
-    # The only sound in the game: the gunshot.
+
+def load_shoot_sound():
     try:
-        shoot_sound = pygame.mixer.Sound("music/Crash_Metal_Sweetener_Distant.mp3")
+        return pygame.mixer.Sound("music/Crash_Metal_Sweetener_Distant.mp3")
     except (pygame.error, FileNotFoundError):
-        shoot_sound = None
+        return None
 
-    play_button = Button(settings, screen, "Play")
-    stats = GameStats(settings)
-    hero = Hero(settings, screen)
+
+def run_game():
+    pygame.init()
+    settings = Settings()
+
+    background_image = pygame.image.load('417403_980.jpg')
+    screen = create_screen(settings, background_image.get_size())
+    shoot_sound = load_shoot_sound()
+
+    # Objects.
+    storage = HighScoreStorage()
+    stats = GameStats(settings, storage)
+    hero = Hero(settings, screen, HeroImages())
     monster = Monster(settings, screen)
-    hud = HUD(settings, screen, stats, hero, monster)
     bullets = Group()
+    play_button = Button(settings, screen, "Play")
+    hud = HUD(settings, screen, stats, hero, monster)
+
+    # Systems.
+    flow = GameFlow(settings, stats, storage, hud, hero, monster, bullets)
+    shooter = Shooter(settings, screen, stats, hero, bullets, shoot_sound)
+    inputs = InputHandler(stats, hero, flow, shooter, play_button)
+    combat = CombatSystem(stats, flow, hero, monster, bullets)
+    renderer = Renderer(screen, stats, ScrollingBackground(screen, background_image),
+                        hud, hero, monster, bullets, play_button)
 
     clock = pygame.time.Clock()
-    y = 0   # scrolling background position
-
     while True:
-        gl.check_events(settings, screen, stats, hud, play_button, hero,
-                        monster, bullets, shoot_sound)
-
+        inputs.process()
         if stats.state == "playing":
             hero.update()
-            gl.update_bullets(settings, stats, hud, hero, monster, bullets)
+            combat.update_bullets()
             if stats.state == "playing":
-                gl.update_monster(settings, stats, hero, monster, bullets)
+                combat.update_monster()
 
-        # Scrolling background (two copies stacked vertically).
-        y += 5
-        if y >= settings.screen_height:
-            y -= settings.screen_height
-        screen.blit(background, (0, y))
-        screen.blit(background, (0, y - settings.screen_height))
-
-        gl.update_screen(settings, screen, stats, hud, hero, monster, bullets,
-                         play_button)
+        renderer.draw()
         clock.tick(60)
 
 
-run_game()
+if __name__ == "__main__":
+    run_game()
