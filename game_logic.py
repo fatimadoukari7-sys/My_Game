@@ -8,22 +8,38 @@ from bullet import Bullet
 # ----------------------------------------------------------------------
 # Game flow
 # ----------------------------------------------------------------------
-def start_game(settings, stats, hud, hero, monster, bullets):
-    """Start (or restart) a round."""
+def load_level(settings, stats, hud, hero, monster, bullets):
+    """Apply the settings of stats.level and start playing it."""
+    settings.apply_level(stats.level)
     pygame.mouse.set_visible(False)
-    stats.reset_stats()
     stats.state = "playing"
-
     hero.reset()
     monster.reset()
     bullets.empty()
-
     hud.prep_images()
 
 
+def start_game(settings, stats, hud, hero, monster, bullets):
+    """Start a brand new game from level 1."""
+    stats.reset_stats()
+    load_level(settings, stats, hud, hero, monster, bullets)
+
+
+def press_play(settings, stats, hud, hero, monster, bullets):
+    """Play button / P key: next level if one was just finished."""
+    if stats.state == "level_complete":
+        stats.level += 1
+        load_level(settings, stats, hud, hero, monster, bullets)
+    else:
+        start_game(settings, stats, hud, hero, monster, bullets)
+
+
 def win_game(settings, stats, hud, hero):
-    stats.state = "won"
-    stats.last_reward = settings.win_reward + hero.ammo * settings.ammo_bonus
+    last_level = stats.level >= len(settings.levels) - 1
+    stats.state = "won" if last_level else "level_complete"
+    # No ammo bonus on levels with unlimited ammo.
+    ammo_bonus = 0 if settings.infinite_ammo else hero.ammo * settings.ammo_bonus
+    stats.last_reward = settings.win_reward + ammo_bonus
     stats.score += stats.last_reward
     hud.prep_score()
     check_high_score(stats, hud)
@@ -51,12 +67,13 @@ def update_high_score(stats):
 # Events
 # ----------------------------------------------------------------------
 def fire_bullet(settings, screen, stats, hero, bullets, shoot_sound):
-    """Fire one bullet if the hero still has ammo."""
+    """Fire one bullet if the hero still has ammo (always, if unlimited)."""
     if stats.state != "playing":
         return
     if hero.ammo > 0 and len(bullets) < settings.bullets_allowed:
         bullets.add(Bullet(settings, screen, hero))
-        hero.ammo -= 1
+        if not settings.infinite_ammo:
+            hero.ammo -= 1
         if shoot_sound:
             shoot_sound.play()
 
@@ -72,12 +89,11 @@ def check_keydown_events(event, settings, screen, stats, hud, hero, monster,
     elif event.key == pygame.K_DOWN:
         hero.moving_down = True
     elif event.key == pygame.K_SPACE:
+        if stats.state == "playing":
+            hero.start_fire()                       # show the "fire" picture
         fire_bullet(settings, screen, stats, hero, bullets, shoot_sound)
     elif event.key == pygame.K_p and stats.state != "playing":
         start_game(settings, stats, hud, hero, monster, bullets)
-    elif event.key in (pygame.K_F11, pygame.K_f):
-        # Enlarge the game to full screen / go back to the window.
-        pygame.display.toggle_fullscreen()
     elif event.key == pygame.K_q:
         update_high_score(stats)
         sys.exit()
@@ -92,6 +108,8 @@ def check_keyup_events(event, hero):
         hero.moving_up = False
     elif event.key == pygame.K_DOWN:
         hero.moving_down = False
+    elif event.key == pygame.K_SPACE:
+        hero.stop_fire()
 
 
 def check_events(settings, screen, stats, hud, play_button, hero, monster,
@@ -107,7 +125,7 @@ def check_events(settings, screen, stats, hud, play_button, hero, monster,
             check_keyup_events(event, hero)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if stats.state != "playing" and play_button.rect.collidepoint(event.pos):
-                start_game(settings, stats, hud, hero, monster, bullets)
+                press_play(settings, stats, hud, hero, monster, bullets)
 
 
 # ----------------------------------------------------------------------
@@ -120,28 +138,38 @@ def update_bullets(settings, stats, hud, hero, monster, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
 
-    # Bullets that hit the monster disappear and take away its health.
-    hits = pygame.sprite.spritecollide(monster, bullets, True)
-    if hits:
-        monster.take_damage(len(hits))
-        if monster.is_dead:          # no health left: the hero wins
-            bullets.empty()
-            win_game(settings, stats, hud, hero)
+    # A bullet hit the monster: the hero wins.
+    if pygame.sprite.spritecollideany(monster, bullets):
+        bullets.empty()
+        win_game(settings, stats, hud, hero)
 
 
 def update_monster(settings, stats, hero, monster, bullets):
     monster.update(bullets, hero)
+    monster.fires.update()
 
     # The monster touched the hero.
     if pygame.sprite.collide_rect(hero, monster):
         if hero.take_damage() and hero.health <= 0:
             lose_game(stats)
+            return
+
+    # A fireball hit the hero.
+    for fire in monster.fires.copy():
+        if pygame.sprite.collide_rect(hero, fire):
+            fire.kill()
+            if hero.take_damage() and hero.health <= 0:
+                lose_game(stats)
+                return
 
 
 def update_screen(settings, screen, stats, hud, hero, monster, bullets, play_button):
     """Draw everything (the background is drawn in main.py)."""
     for bullet in bullets.sprites():
         bullet.draw_bullet()
+
+    for fire in monster.fires.sprites():
+        fire.draw()
 
     hero.blitme()
     monster.blitme()
