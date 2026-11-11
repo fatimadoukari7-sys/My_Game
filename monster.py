@@ -54,7 +54,8 @@ class Monster(Sprite):
         scale = self.settings.monster_scale
         if scale != 1:
             w, h = image.get_size()
-            image = pygame.transform.smoothscale(image, (int(w * scale), int(h * scale)))
+            image = pygame.transform.smoothscale(
+                image, (int(w * scale), int(h * scale)))
         return image
 
     # ------------------------------------------------------------------
@@ -72,17 +73,6 @@ class Monster(Sprite):
     def _enter_from_side(self):
         self.entrance.start(self)
         self.brain.clear_dodge()
-
-        self.max_health = self.settings.monster_health
-        self.health = self.max_health
-
-    def take_damage(self, amount=1):
-        """Lose health points (never below zero)."""
-        self.health = max(0, self.health - amount)
-
-    @property
-    def is_dead(self):
-        return self.health <= 0
 
     # ------------------------------------------------------------------
     def update(self, bullets, hero):
