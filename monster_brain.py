@@ -5,8 +5,8 @@ import random
 class MonsterBrain:
     """The monster's movement AI: patrol, dodge bullets and chase the hero."""
 
-    def __init__(self, settings, screen_rect):
-        self.settings = settings
+    def __init__(self, profile, screen_rect):
+        self.profile = profile
         self.screen_rect = screen_rect
         self.reset()
 
@@ -30,14 +30,14 @@ class MonsterBrain:
         dy = hero.rect.centery - monster.rect.centery
         dist = math.hypot(dx, dy)
         if dist > 0:
-            speed = self.settings.monster_chase_speed
+            speed = self.profile.chase_speed
             monster.x += dx / dist * speed
             monster.y += dy / dist * speed
 
     def _patrol(self, monster, bullets, now):
         self._decide_dodge(monster, bullets, now)
 
-        speed = self.settings.monster_speed
+        speed = self.profile.speed
         if now < self.dodge_until:
             speed *= 1.6
         elif random.random() < 0.01:
@@ -65,13 +65,13 @@ class MonsterBrain:
 
         for bullet in bullets:
             coming = (bullet.rect.top > monster.rect.top and
-                      bullet.rect.top - monster.rect.bottom < self.settings.monster_dodge_range)
+                      bullet.rect.top - monster.rect.bottom < self.profile.dodge_range)
             aligned = (abs(bullet.rect.centerx - monster.rect.centerx) <
                        monster.rect.width * 0.7 + bullet.rect.width)
             if coming and aligned and bullet not in self.decisions:
-                dodge = random.random() < self.settings.monster_dodge_chance
+                dodge = random.random() < self.profile.dodge_chance
                 self.decisions[bullet] = dodge
                 if dodge:
-                    self.dodge_until = now + self.settings.monster_dodge_time
+                    self.dodge_until = now + self.profile.dodge_time
                     # Run away from the bullet.
                     self.direction = 1 if monster.rect.centerx >= bullet.rect.centerx else -1
