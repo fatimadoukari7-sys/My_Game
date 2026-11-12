@@ -1,10 +1,11 @@
 from monster_profile import MonsterProfile, register
-from monster_gun import MonsterGun
+from abilities.fire_attack import FireAttack
 
 
 @register
 class FireMonster(MonsterProfile):
-    """المستوى 2: يطلق النار، وذخيرة البطل غير محدودة."""
+    """المستوى 2: وحش يمتلك قدرة إطلاق الكرات النارية."""
+
     level = 2
     health = 5
     speed = 5
@@ -15,5 +16,5 @@ class FireMonster(MonsterProfile):
     image = "images/monster_lev2.png"
     scale = 0.25
 
-    def make_gun(self, screen):
-        return MonsterGun(self, screen)
+    def make_ability(self, screen):
+        return FireAttack(self, screen)
