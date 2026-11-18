@@ -8,8 +8,8 @@ class MonsterGun:
 
     FIRST_SHOT_DELAY = 1500
 
-    def __init__(self, settings, screen):
-        self.settings = settings
+    def __init__(self, profile, screen):
+        self.profile = profile
         self.screen = screen
         self.fires = Group()
         self.next_shot = 0
@@ -20,5 +20,5 @@ class MonsterGun:
 
     def try_fire(self, monster, hero, now):
         if now >= self.next_shot:
-            self.fires.add(MonsterFire(self.settings, self.screen, monster, hero))
-            self.next_shot = now + self.settings.monster_fire_interval
+            self.fires.add(MonsterFire(self.profile, self.screen, monster, hero))
+            self.next_shot = now + self.profile.fire_interval

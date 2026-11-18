@@ -1,25 +1,20 @@
 import pygame
 
+import theme
+
 
 class HeroImages:
-    """Loads the hero pictures and chooses which one to show."""
+    """Loads the hero pictures and chooses which one to show.
 
-    HEIGHT = 90        # height of the hero on the screen (pixels)
-
-    # File names are case sensitive on Linux.
-    PATHS = {
-        'stop':  'images/Gerero/gereroStop.png',   # nothing is pressed
-        'fire':  'images/Gerero/Gerero.png',       # fire key (space)
-        'left':  'images/Gerero/left1.png',        # left arrow
-        'right': 'images/Gerero/right.png',        # right arrow
-        'up':    'images/Gerero/up.png',           # up arrow
-    }
+    Which files to load and how big they are: see theme.py.
+    """
 
     def __init__(self):
+        self.height = theme.HERO_HEIGHT
         self.pictures = self._load_all()
 
     def _load(self, path):
-        """Load one picture scaled to HEIGHT, or None if it cannot be loaded."""
+        """Load one picture scaled to the hero height, or None if it cannot be loaded."""
         try:
             raw = pygame.image.load(path).convert_alpha()
         except (pygame.error, FileNotFoundError) as error:
@@ -27,14 +22,16 @@ class HeroImages:
             return None
         w, h = raw.get_size()
         return pygame.transform.smoothscale(
-            raw, (max(1, int(w * self.HEIGHT / h)), self.HEIGHT))
+            raw, (max(1, int(w * self.height / h)), self.height))
 
     def _load_all(self):
-        pictures = {name: self._load(path) for name, path in self.PATHS.items()}
+        pictures = {name: self._load(path)
+                    for name, path in theme.HERO_IMAGES.items()}
 
         if pictures['stop'] is None:    # safety net: the game still runs
-            fallback = pygame.Surface((60, self.HEIGHT), pygame.SRCALPHA)
-            pygame.draw.ellipse(fallback, (80, 180, 90), fallback.get_rect())
+            fallback = pygame.Surface((60, self.height), pygame.SRCALPHA)
+            pygame.draw.ellipse(fallback, theme.HERO_FALLBACK_COLOR,
+                                fallback.get_rect())
             pictures['stop'] = fallback
 
         for name in pictures:           # a missing picture -> the stop picture

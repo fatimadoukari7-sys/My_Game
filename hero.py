@@ -3,13 +3,15 @@ from pygame.sprite import Sprite
 
 
 class Hero(Sprite):
-    """The hero: position, health, ammo. Pictures come from HeroImages."""
+    """The hero: position, health, ammo. Pictures come from HeroImages.
+
+    It does not draw itself: the Renderer draws it.
+    """
 
     FIRE_FLASH = 150   # ms to keep the "fire" picture after shooting
 
     def __init__(self, settings, screen, images):
         super().__init__()
-        self.screen = screen
         self.screen_rect = screen.get_rect()
         self.settings = settings
         self.images = images
@@ -70,6 +72,3 @@ class Hero(Sprite):
         # Stay inside the screen.
         self.rect.clamp_ip(self.screen_rect)
         self.x, self.y = float(self.rect.centerx), float(self.rect.centery)
-
-    def blitme(self):
-        self.screen.blit(self.image, self.rect)

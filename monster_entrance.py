@@ -5,12 +5,12 @@ import pygame
 
 
 class MonsterEntrance:
-    """Level 2 behavior: the monster leaves and re-enters from a random side."""
+    """The monster leaves and re-enters from a random side."""
 
     MARGIN = 20
 
-    def __init__(self, settings, screen_rect):
-        self.settings = settings
+    def __init__(self, profile, screen_rect):
+        self.profile = profile
         self.screen_rect = screen_rect
         self.active = False       # True while the monster is flying in
         self.target_x = 0.0
@@ -43,14 +43,14 @@ class MonsterEntrance:
         monster.rect.y = int(monster.y)
 
         self.next_jump = pygame.time.get_ticks() + random.randint(
-            self.settings.monster_jump_min, self.settings.monster_jump_max)
+            self.profile.jump_min, self.profile.jump_max)
 
     def move(self, monster):
         """Fly toward the landing point."""
         dx = self.target_x - monster.x
         dy = self.target_y - monster.y
         dist = math.hypot(dx, dy)
-        speed = self.settings.monster_speed * 1.6
+        speed = self.profile.speed * 1.6
         if dist <= speed:
             monster.x, monster.y = self.target_x, self.target_y
             monster.home_y = self.target_y
