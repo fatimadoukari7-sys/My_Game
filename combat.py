@@ -2,10 +2,12 @@ import pygame
 
 
 class CombatSystem:
-    """Moves bullets and checks every collision between game objects."""
+    """Moves bullets and checks every collision between the game objects.
+
+    Levels 1-2 (one monster). Level 3 is handled by WaveCombat.
+    """
 
     def __init__(self, stats, flow, hero, monster, bullets):
-
         self.stats = stats
         self.flow = flow
         self.hero = hero
@@ -13,76 +15,42 @@ class CombatSystem:
         self.bullets = bullets
 
     def update_bullets(self):
-
         self.bullets.update()
 
         for bullet in self.bullets.copy():
-
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
 
-        # Check collisions between bullets and monster.
-        hits = pygame.sprite.spritecollide(
-            self.monster,
-            self.bullets,
-            True
-        )
-
+        # Bullets that hit the monster disappear and take away its health.
+        hits = pygame.sprite.spritecollide(self.monster, self.bullets, True)
         if hits:
+            # Points for every bullet that hit (the score goes up while playing).
+            points = getattr(self.flow.settings, "hit_points", 10)
+            self.flow.add_points(len(hits) * points)
 
-            # The monster decides how much damage it receives
-            # through its damage strategy.
             self.monster.take_damage(len(hits))
-
-            # Check if the monster is dead.
-            if self.monster.is_dead and self.stats.state == "playing":
-
+            if self.monster.is_dead:        # no health left: the hero wins
                 self.bullets.empty()
                 self.monster.fires.empty()
-
-                # Give the hero 100 points for killing the monster.
-                self.flow.add_points(100)
-
-                # Finish the level.
                 self.flow.win_game()
 
     def update_monster(self):
-
-        self.monster.update(
-            self.bullets,
-            self.hero
-        )
+        self.monster.update(self.bullets, self.hero)
 
         # The monster touched the hero.
-        if pygame.sprite.collide_rect(
-            self.hero,
-            self.monster
-        ):
-
+        if pygame.sprite.collide_rect(self.hero, self.monster):
             if self._hero_died_after_hit():
                 return
 
         # A fireball hit the hero.
         for fire in self.monster.fires.copy():
-
-            if pygame.sprite.collide_rect(
-                self.hero,
-                fire
-            ):
-
+            if pygame.sprite.collide_rect(self.hero, fire):
                 fire.kill()
-
                 if self._hero_died_after_hit():
                     return
 
     def _hero_died_after_hit(self):
-
-        if (
-            self.hero.take_damage()
-            and self.hero.health <= 0
-        ):
-
+        if self.hero.take_damage() and self.hero.health <= 0:
             self.flow.lose_game()
             return True
-
         return False
